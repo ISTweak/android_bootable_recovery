@@ -1074,10 +1074,10 @@ static void choose_default_backup_format() {
         NULL
     };
 
-    if (nandroid_get_default_backup_format() == NANDROID_BACKUP_FORMAT_DUP) {
-        list = list_dup_default;
-    } else {
+    if (nandroid_get_default_backup_format() == NANDROID_BACKUP_FORMAT_TAR) {
         list = list_tar_default;
+    } else {
+        list = list_dup_default;
     }
 
     int chosen_item = get_menu_selection(headers, list, 0, 0);
@@ -1331,6 +1331,9 @@ void show_advanced_menu()
         list[8] = NULL;
     }
 
+	char norecovery[PROPERTY_VALUE_MAX] = {'\0'};
+	char cwmrec[PROPERTY_VALUE_MAX] = {'\0'};
+
     for (;;)
     {
         int chosen_item = get_filtered_menu_selection(headers, list, 0, 0, sizeof(list) / sizeof(char*));
@@ -1339,7 +1342,16 @@ void show_advanced_menu()
         switch (chosen_item)
         {
             case 0:
+            	property_get("androtweak.norecovery", norecovery, "");
+            	if (strcmp(norecovery, "1") == 0) {
+            		property_get("androtweak.cwm", cwmrec, "");
+            		if (strcmp(cwmrec, "1") == 0) {
+            			__system("touch /cache/recovery/boot;sync;");
+            		}
+            		android_reboot(ANDROID_RB_RESTART, 0, 0);
+            	} else {
                 android_reboot(ANDROID_RB_RESTART2, 0, "recovery");
+            	}
                 break;
             case 1:
                 if (0 != ensure_path_mounted("/data"))

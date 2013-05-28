@@ -19,6 +19,7 @@
 
 #include <signal.h>
 #include <sys/wait.h>
+#include <cutils/properties.h>
 
 #include "bootloader.h"
 #include "common.h"
@@ -310,13 +311,33 @@ int nandroid_backup_partition_extended(const char* backup_path, const char* moun
 }
 
 int nandroid_backup_partition(const char* backup_path, const char* root) {
+    char tmp[PATH_MAX];
+    char oobdump[PROPERTY_VALUE_MAX] = {'\0'};
+    property_get("androtweak.oobdump", oobdump, "");
+    if (strcmp(oobdump, "1") == 0) {
+    	if (strcmp(root, "/system") == 0) {
+    		const char* name = basename(root);
+    		sprintf(tmp, "dump_image %s %s/%s.img", name, backup_path, name);
+    		ui_print("Dump with oob up %s image...\n", name);
+    		__system(tmp);
+    		return 0;
+    	}
+
+		if (strcmp(root, "/boot") == 0 || strcmp(root, "/recovery") == 0) {
+			const char* name = basename(root);
+			sprintf(tmp, "dump_image %s %s/%s.img", name, backup_path, name);
+			ui_print("Backing up %s image...\n", name);
+			__system(tmp);
+			return 0;
+		}
+    }
+
     Volume *vol = volume_for_path(root);
     // make sure the volume exists before attempting anything...
     if (vol == NULL || vol->fs_type == NULL)
         return 0;
 
     // see if we need a raw backup (mtd)
-    char tmp[PATH_MAX];
     int ret;
     if (strcmp(vol->fs_type, "mtd") == 0 ||
             strcmp(vol->fs_type, "bml") == 0 ||
@@ -696,13 +717,33 @@ int nandroid_restore_partition_extended(const char* backup_path, const char* mou
 }
 
 int nandroid_restore_partition(const char* backup_path, const char* root) {
+    char tmp[PATH_MAX];
+    char oobdump[PROPERTY_VALUE_MAX] = {'\0'};
+    property_get("androtweak.oobdump", oobdump, "");
+    if (strcmp(oobdump, "1") == 0) {
+    	if (strcmp(root, "/system") == 0) {
+    		const char* name = basename(root);
+    		sprintf(tmp, "flash_image %s %s/%s.img", name, backup_path, name);
+    		ui_print("Flash with oob up %s image...\n", name);
+    		__system(tmp);
+    		return 0;
+    	}
+
+		if (strcmp(root, "/boot") == 0 || strcmp(root, "/recovery") == 0) {
+			const char* name = basename(root);
+			sprintf(tmp, "flash_image %s %s/%s.img", name, backup_path, name);
+			ui_print("Restoring %s image...\n", name);
+			__system(tmp);
+			return 0;
+		}
+    }
+
     Volume *vol = volume_for_path(root);
     // make sure the volume exists...
     if (vol == NULL || vol->fs_type == NULL)
         return 0;
 
     // see if we need a raw restore (mtd)
-    char tmp[PATH_MAX];
     if (strcmp(vol->fs_type, "mtd") == 0 ||
             strcmp(vol->fs_type, "bml") == 0 ||
             strcmp(vol->fs_type, "emmc") == 0) {
