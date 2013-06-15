@@ -796,7 +796,13 @@ main(int argc, char **argv) {
     // Recovery needs to install world-readable files, so clear umask
     // set by init
     umask(0);
-
+    
+	char nobackkey[PROPERTY_VALUE_MAX];
+	property_get("androtweak.nobackkey", nobackkey, "");
+	if (!strcmp(nobackkey, "1")) {
+		ui_set_showing_back_button(1);
+	}
+    
     if (strcmp(basename(argv[0]), "recovery") != 0)
     {
         if (strstr(argv[0], "minizip") != NULL)
