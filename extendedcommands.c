@@ -1318,25 +1318,32 @@ void show_advanced_menu()
     };
 
     static char* list[] = { "reboot recovery",
+                            "reboot to bootloader",
+                            "power off",
                             "wipe dalvik cache",
                             "report error",
                             "key test",
                             "show log",
-                            "fix permissions",
                             "partition sdcard",
                             "partition external sdcard",
                             "partition internal sdcard",
                             NULL
     };
 
-    if (!can_partition("/sdcard")) {
-        list[6] = NULL;
+    char bootloader_mode[PROPERTY_VALUE_MAX];
+    property_get("ro.bootloader.mode", bootloader_mode, "");
+    if (!strcmp(bootloader_mode, "download")) {
+        list[1] = "reboot to download mode";
     }
-    if (!can_partition("/external_sd")) {
+
+    if (!can_partition("/sdcard")) {
         list[7] = NULL;
     }
-    if (!can_partition("/emmc")) {
+    if (!can_partition("/external_sd")) {
         list[8] = NULL;
+    }
+    if (!can_partition("/emmc")) {
+        list[9] = NULL;
     }
 
 	char norecovery[PROPERTY_VALUE_MAX] = {'\0'};
@@ -1350,6 +1357,7 @@ void show_advanced_menu()
         switch (chosen_item)
         {
             case 0:
+            {
             	property_get("androtweak.norecovery", norecovery, "");
             	if (strcmp(norecovery, "1") == 0) {
             		property_get("androtweak.cwm", cwmrec, "");
@@ -1358,10 +1366,29 @@ void show_advanced_menu()
             		}
             		android_reboot(ANDROID_RB_RESTART, 0, 0);
             	} else {
-                android_reboot(ANDROID_RB_RESTART2, 0, "recovery");
+            	ui_print("Rebooting recovery...\n");
+                reboot_main_system(ANDROID_RB_RESTART2, 0, "recovery");
             	}
                 break;
+            }
             case 1:
+            {
+                if (!strcmp(bootloader_mode, "download")) {
+                    ui_print("Rebooting to download mode...\n");
+                    reboot_main_system(ANDROID_RB_RESTART2, 0, "download");
+                } else {
+                    ui_print("Rebooting to bootloader...\n");
+                    reboot_main_system(ANDROID_RB_RESTART2, 0, "bootloader");
+                }
+                break;
+            }
+            case 2:
+            {
+                ui_print("Shutting down...\n");
+                reboot_main_system(ANDROID_RB_POWEROFF, 0, 0);
+                break;
+            }
+            case 3:
                 if (0 != ensure_path_mounted("/data"))
                     break;
                 ensure_path_mounted("/sd-ext");
@@ -1374,10 +1401,10 @@ void show_advanced_menu()
                 }
                 ensure_path_unmounted("/data");
                 break;
-            case 2:
+            case 4:
                 handle_failure(1);
                 break;
-            case 3:
+            case 5:
             {
                 ui_print("Outputting key codes.\n");
                 ui_print("Go back to end debugging.\n");
@@ -1392,23 +1419,16 @@ void show_advanced_menu()
                 while (action != GO_BACK);
                 break;
             }
-            case 4:
+            case 6:
                 ui_printlogtail(12);
                 break;
-            case 5:
-                ensure_path_mounted("/system");
-                ensure_path_mounted("/data");
-                ui_print("Fixing permissions...\n");
-                __system("fix_permissions");
-                ui_print("Done!\n");
-                break;
-            case 6:
+            case 7:
                 partition_sdcard("/sdcard");
                 break;
-            case 7:
+            case 8:
                 partition_sdcard("/external_sd");
                 break;
-            case 8:
+            case 9:
                 partition_sdcard("/emmc");
                 break;
         }
@@ -1580,15 +1600,22 @@ int verify_root_and_recovery() {
 
     int ret = 0;
     struct stat st;
-    if (0 == lstat("/system/etc/install-recovery.sh", &st)) {
-        if (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
-            ui_show_text(1);
-            ret = 1;
-            if (confirm_selection("ROM may flash stock recovery on boot. Fix?", "Yes - Disable recovery flash")) {
-                __system("chmod -x /system/etc/install-recovery.sh");
+    // check to see if install-recovery.sh is going to clobber recovery
+    // install-recovery.sh is also used to run the su daemon on stock rom for 4.3+
+    // so verify that doesn't exist...
+    if (0 != lstat("/system/etc/.installed_su_daemon", &st)) {
+        // check install-recovery.sh exists and is executable
+        if (0 == lstat("/system/etc/install-recovery.sh", &st)) {
+            if (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
+                ui_show_text(1);
+                ret = 1;
+                if (confirm_selection("ROM may flash stock recovery on boot. Fix?", "Yes - Disable recovery flash")) {
+                    __system("chmod -x /system/etc/install-recovery.sh");
+                }
             }
         }
     }
+
 
     int exists = 0;
     if (0 == lstat("/system/bin/su", &st)) {
@@ -1621,9 +1648,7 @@ int verify_root_and_recovery() {
         ui_show_text(1);
         ret = 1;
         if (confirm_selection("Root access is missing. Root device?", "Yes - Root device (/system/xbin/su)")) {
-            __system("cp /sbin/su.recovery /system/xbin/su");
-            __system("chmod 6755 /system/xbin/su");
-            __system("ln -sf /system/xbin/su /system/bin/su");
+            __system("/sbin/install-su.sh");
         }
     }
 
