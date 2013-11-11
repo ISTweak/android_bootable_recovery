@@ -146,7 +146,7 @@ fopen_path(const char *path, const char *mode) {
 
     // When writing, try to create the containing directory, if necessary.
     // Use generous permissions, the system (init.rc) will reset them.
-    if (strchr("wa", mode[0])) dirCreateHierarchy(path, 0777, NULL, 1, sehandle);
+	if (strchr("wa", mode[0])) dirCreateHierarchy(path, 0777, NULL, 1, sehandle);
 
     FILE *fp = fopen(path, mode);
     if (fp == NULL && path != COMMAND_FILE) LOGE("Can't open %s\n", path);
@@ -768,7 +768,9 @@ setup_adbd() {
 
 // call a clean reboot
 void reboot_main_system(int cmd, int flags, char *arg) {
+#if 0
     verify_root_and_recovery();
+#endif
     finish_recovery(NULL); // sync() in here
     android_reboot(cmd, flags, arg);
 }
@@ -885,7 +887,7 @@ main(int argc, char **argv) {
             continue;
         }
     }
-
+#ifndef NO_SELINUX
     struct selinux_opt seopts[] = {
       { SELABEL_OPT_PATH, "/file_contexts" }
     };
@@ -896,7 +898,7 @@ main(int argc, char **argv) {
         fprintf(stderr, "Warning: No file_contexts\n");
         ui_print("Warning:  No file_contexts\n");
     }
-
+#endif
     LOGI("device_recovery_start()\n");
     device_recovery_start();
 
