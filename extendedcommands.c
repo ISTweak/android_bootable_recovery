@@ -1350,10 +1350,6 @@ static void partition_sdcard(const char* volume) {
     if (partition_type < 0)
         return;
 
-    int partition_type = get_menu_selection(fstype_headers, partition_types, 0, 0);
-    if (partition_type == GO_BACK)
-        return;
-
     char sddevice[256];
     Volume *vol = volume_for_path(volume);
 
