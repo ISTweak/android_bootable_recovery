@@ -687,7 +687,7 @@ bool e4crypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
         // DE_n key
         auto system_de_path = android::vold::BuildDataSystemDePath(user_id);
         auto misc_de_path = android::vold::BuildDataMiscDePath(user_id);
-        auto vendor_de_path = android::vold::BuildDataVendorDePath(user_id);
+/*        auto vendor_de_path = android::vold::BuildDataVendorDePath(user_id);*/
         auto user_de_path = android::vold::BuildDataUserDePath(nullptr, user_id);
 
         if (volume_uuid.empty()) {
@@ -699,7 +699,7 @@ bool e4crypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
             if (!prepare_dir(profiles_de_path, 0771, AID_SYSTEM, AID_SYSTEM)) return false;
             if (!prepare_dir(system_de_path, 0770, AID_SYSTEM, AID_SYSTEM)) return false;
             if (!prepare_dir(misc_de_path, 01771, AID_SYSTEM, AID_MISC)) return false;
-            if (!prepare_dir(vendor_de_path, 0771, AID_ROOT, AID_ROOT)) return false;
+/*            if (!prepare_dir(vendor_de_path, 0771, AID_ROOT, AID_ROOT)) return false;*/
         }
         if (!prepare_dir(user_de_path, 0771, AID_SYSTEM, AID_SYSTEM)) return false;
 
@@ -710,7 +710,7 @@ bool e4crypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
                 get_data_file_encryption_modes(&de_ref);
                 if (!ensure_policy(de_ref, system_de_path)) return false;
                 if (!ensure_policy(de_ref, misc_de_path)) return false;
-                if (!ensure_policy(de_ref, vendor_de_path)) return false;
+/*                if (!ensure_policy(de_ref, vendor_de_path)) return false;*/
             } else {
                 if (!read_or_create_volkey(misc_de_path, nullptr, &de_ref)) return false;
             }
