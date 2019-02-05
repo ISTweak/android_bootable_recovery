@@ -1101,7 +1101,6 @@ void TWPartition::Setup_Data_Media() {
 	Is_Storage = true;
 	Storage_Path = Mount_Point + "/media";
 	Symlink_Path = Storage_Path;
-	int Exclude_OEM_Path;
 	if (Mount_Point == "/data") {
 		Is_Settings_Storage = true;
 		if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
