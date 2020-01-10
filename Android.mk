@@ -58,6 +58,7 @@ else
     LOCAL_CFLAGS += -DTW_DEVICE_VERSION='"-0"'
 endif
 LOCAL_CFLAGS += -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
+LOCAL_CFLAGS += -Wno-format-extra-args
 
 LOCAL_SRC_FILES := \
     twrp.cpp \
